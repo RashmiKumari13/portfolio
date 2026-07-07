@@ -13,38 +13,50 @@ export function ScrollVideoSync() {
   const videoCtaRef = useRef<HTMLVideoElement>(null);
 
   useEffect(() => {
-    const ctx = gsap.context(() => {
-      // Set initial opacities
-      gsap.set(videoHeroRef.current, { opacity: 1 });
-      gsap.set(videoJourneyRef.current, { opacity: 0 });
-      gsap.set(videoCtaRef.current, { opacity: 0 });
+    let ctx: gsap.Context;
+    
+    // Defer ScrollTrigger instantiation to ensure all peer components have completed DOM mounting
+    const timer = setTimeout(() => {
+      const journeyEl = document.getElementById("section-journey");
+      const ctaEl = document.getElementById("section-cta");
 
-      // Crossfade from Hero Video to Journey Video
-      ScrollTrigger.create({
-        trigger: "#section-journey",
-        start: "top bottom",
-        end: "top center",
-        scrub: true,
-        onUpdate: (self) => {
-          const progress = self.progress;
-          gsap.set(videoHeroRef.current, { opacity: 1 - progress });
-          gsap.set(videoJourneyRef.current, { opacity: progress });
-        },
-      });
+      ctx = gsap.context(() => {
+        // Set initial opacities safely
+        if (videoHeroRef.current) gsap.set(videoHeroRef.current, { opacity: 1 });
+        if (videoJourneyRef.current) gsap.set(videoJourneyRef.current, { opacity: 0 });
+        if (videoCtaRef.current) gsap.set(videoCtaRef.current, { opacity: 0 });
 
-      // Crossfade from Journey Video to CTA Video
-      ScrollTrigger.create({
-        trigger: "#section-cta",
-        start: "top bottom",
-        end: "top center",
-        scrub: true,
-        onUpdate: (self) => {
-          const progress = self.progress;
-          gsap.set(videoJourneyRef.current, { opacity: 1 - progress });
-          gsap.set(videoCtaRef.current, { opacity: progress });
-        },
-      });
-    }, containerRef);
+        // Crossfade from Hero Video to Journey Video
+        if (journeyEl && videoHeroRef.current && videoJourneyRef.current) {
+          ScrollTrigger.create({
+            trigger: journeyEl,
+            start: "top bottom",
+            end: "top center",
+            scrub: true,
+            onUpdate: (self) => {
+              const progress = self.progress;
+              gsap.set(videoHeroRef.current, { opacity: 1 - progress });
+              gsap.set(videoJourneyRef.current, { opacity: progress });
+            },
+          });
+        }
+
+        // Crossfade from Journey Video to CTA Video
+        if (ctaEl && videoJourneyRef.current && videoCtaRef.current) {
+          ScrollTrigger.create({
+            trigger: ctaEl,
+            start: "top bottom",
+            end: "top center",
+            scrub: true,
+            onUpdate: (self) => {
+              const progress = self.progress;
+              gsap.set(videoJourneyRef.current, { opacity: 1 - progress });
+              gsap.set(videoCtaRef.current, { opacity: progress });
+            },
+          });
+        }
+      }, containerRef);
+    }, 150);
 
     // Trigger video playback explicitly on mount to bypass aggressive autoplay blockers
     const playVideo = (v: HTMLVideoElement | null) => {
@@ -65,7 +77,8 @@ export function ScrollVideoSync() {
     playVideo(videoCtaRef.current);
 
     return () => {
-      ctx.revert();
+      clearTimeout(timer);
+      if (ctx) ctx.revert();
     };
   }, []);
 
@@ -78,19 +91,19 @@ export function ScrollVideoSync() {
       {/* Video 1: Hero Intro */}
       <video
         ref={videoHeroRef}
-        src="/videos/hero.mp4"
+        src="/portfolio/videos/hero.mp4"
         muted
         loop
         playsInline
         autoPlay
         className="absolute inset-0 w-full h-full object-cover select-none transition-opacity duration-300"
-        poster="/images/hero_bg.png"
+        poster="/portfolio/images/hero_bg.png"
       />
 
       {/* Video 2: Engineering Journey */}
       <video
         ref={videoJourneyRef}
-        src="/videos/journey.mp4"
+        src="/portfolio/videos/journey.mp4"
         muted
         loop
         playsInline
@@ -101,7 +114,7 @@ export function ScrollVideoSync() {
       {/* Video 3: Final Call To Action */}
       <video
         ref={videoCtaRef}
-        src="/videos/cta.mp4"
+        src="/portfolio/videos/cta.mp4"
         muted
         loop
         playsInline

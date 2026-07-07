@@ -42,203 +42,188 @@ export interface Project {
 
 export const projectsData: Project[] = [
   {
-    id: "async-port-scanner",
-    title: "Async Port Scanner",
-    tagline: "High-performance, asynchronous TCP port scanner built with C++20 and Boost.Asio.",
-    description: "A C++ network auditing tool that broadcasts concurrent TCP connection probes across port ranges. Bypasses blocking network queues to perform massive port audits rapidly, including service version grabbing (HTTP, SSH, FTP).",
+    id: "localbiz",
+    title: "LocalBiz",
+    tagline: "Location-Based Business Discovery Platform built with React, TypeScript, and Drizzle ORM.",
+    description: "A full-stack e-commerce and discovery platform featuring dynamic product routing, persistent shopping carts, checkout processing, and historical order tracking. Includes Role-Based Access Control (RBAC) and admin dashboards.",
     heroImage: "/images/sentinel_hero.png",
-    demoVideo: "/videos/journey.mp4",
-    githubUrl: "https://github.com/RashmiKumari13/cyber_project",
-    liveUrl: "https://github.com/RashmiKumari13/cyber_project",
-    techStack: ["C++20", "Boost.Asio", "Multi-threading", "Network Socket API", "CMake"],
+    demoVideo: "/videos/hero.mp4",
+    githubUrl: "https://github.com/RashmiKumari13",
+    liveUrl: "https://github.com/RashmiKumari13",
+    techStack: ["React", "TypeScript", "Node.js", "SQLite", "Drizzle ORM", "Radix UI", "React Query"],
     features: [
-      "Asynchronous I/O polling via Boost.Asio context executors.",
-      "Multi-threaded thread pool distributing target subnets dynamically.",
-      "Service identification and banner grabbing from responsive ports.",
-      "Custom socket timeouts protecting against network hang-ups."
+      "Dynamic product search and routing mapped to location inputs.",
+      "Persistent cart state synchronization across user sessions.",
+      "Role-Based Access Control (RBAC) protecting management views.",
+      "Automated order tracking updates and Nodemailer notifications."
     ],
     architecture: {
-      description: "App threads post connection jobs to the Boost.Asio event context pool, creating non-blocking sockets. Active callbacks grab host banners on connection, reporting open sockets.",
+      description: "React client leverages React Query to fetch business data. The Node.js Express server queries a SQLite database via Drizzle ORM schemas, verifying JWT access tokens.",
       diagramNodes: [
-        { id: "scanner", label: "Scanner Main (C++ Threads)", type: "client" },
-        { id: "asio", label: "Boost.Asio Event Loop Context", type: "service" },
-        { id: "target", label: "Target Socket IP/Ports", type: "storage" },
-        { id: "banner", label: "Banner Grabbing Parser", type: "network" }
+        { id: "client", label: "React + Radix UI SPA Client", type: "client" },
+        { id: "query", label: "React Query Cache Handler", type: "service" },
+        { id: "express", label: "Node/Express Auth REST API", type: "leader" },
+        { id: "drizzle", label: "Drizzle ORM Mapping Layer", type: "storage" },
+        { id: "sqlite", label: "SQLite Database", type: "storage" }
       ],
       diagramEdges: [
-        { from: "scanner", to: "asio", label: "Submit async_connect" },
-        { from: "asio", to: "target", label: "Non-blocking Handshake" },
-        { from: "target", to: "banner", label: "OnSuccess: Read Banner" },
-        { from: "banner", to: "scanner", label: "Log Open Port" }
+        { from: "client", to: "query", label: "Query Cache Hook" },
+        { from: "query", to: "express", label: "Signed JWT Fetch Requests" },
+        { from: "express", to: "drizzle", label: "ORM Schema Query" },
+        { from: "drizzle", to: "sqlite", label: "SQL Execution Loop" }
       ]
     },
     challenges: [
-      "Sequential TCP socket timeouts blocks scanner threads, leading to extremely slow scan times over large networks.",
-      "Socket file descriptor leaks when managing hundreds of concurrent connections."
+      "Managing complex cart state and caching updates correctly during concurrent user navigation.",
+      "Securing administrative and inventory editing routes from credential forgery."
     ],
     solutions: [
-      "Replaced blocking syscalls with Boost.Asio's async_connect loop, managing connection lifetimes in-context.",
-      "Wrapped socket handlers in std::unique_ptr and smart resource scopes, ensuring proper cleanups on exit."
+      "Configured React Query with custom caching policies and synchronized cart states to localStorage.",
+      "Implemented a robust Express JWT middleware verification layer parsing role access levels."
     ],
     engineeringDecisions: [
-      "Used C++20 for static typing, safety, and raw performance over Python for network scanners.",
-      "Built with CMake to facilitate library dependency links across Linux environments."
+      "Chose SQLite with Drizzle ORM for serverless database speeds and strong, type-safe SQL schemas.",
+      "Utilized TypeScript to catch type-mismatches in database models during compilation."
     ],
     roadmap: [
-      "Support SYN stealth half-open scanning mode.",
-      "Implement OS fingerprinting signatures database.",
-      "Add UDP port check loops."
+      "Integrate Google Maps Geolocation API loops.",
+      "Implement multi-vendor registration workflows.",
+      "Add Stripe payment gateway layers."
     ],
     performance: {
       lighthousePerformance: 98,
       lighthouseAccessibility: 100,
-      lighthouseBestPractices: 100,
+      lighthouseBestPractices: 99,
       lighthouseSEO: 98,
-      loadTimeMs: 120,
-      fcpMs: 60,
-      bundleSizeKb: 34
+      loadTimeMs: 140,
+      fcpMs: 70,
+      bundleSizeKb: 38
     },
     codeHighlights: [
       {
-        filename: "scanner.cpp",
-        language: "cpp",
-        code: `#include <boost/asio.hpp>
-#include <iostream>
-#include <memory>
+        filename: "schema.ts",
+        language: "typescript",
+        code: `import { sqliteTable, text, integer } from 'drizzle-orm/sqlite-core';
 
-using boost::asio::ip::tcp;
+export const users = sqliteTable('users', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  name: text('name').notNull(),
+  email: text('email').notNull().unique(),
+  passwordHash: text('password_hash').notNull(),
+  role: text('role', { enum: ['user', 'admin'] }).default('user'),
+});
 
-class PortScanner : public std::enable_shared_from_this<PortScanner> {
-public:
-    PortScanner(boost::asio::io_context& io_ctx, const std::string& ip, int port)
-        : socket_(io_ctx), endpoint_(boost::asio::ip::make_address(ip), port) {}
-
-    void start() {
-        auto self = shared_from_this();
-        socket_.async_connect(endpoint_, [self, this](const boost::system::error_code& ec) {
-            if (!ec) {
-                std::cout << "[+] Port " << endpoint_.port() << " is OPEN\\n";
-                self->grab_banner();
-            }
-        });
-    }
-
-private:
-    void grab_banner() {
-        // Asynchronously read service header logs...
-    }
-    tcp::socket socket_;
-    tcp::endpoint endpoint_;
-};`,
-        explanation: "Uses Boost.Asio's async_connect to spawn non-blocking socket connections. This lets the program scan multiple ports in parallel on a single thread."
+export const orders = sqliteTable('orders', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  userId: integer('user_id').references(() => users.id),
+  totalAmount: integer('total_amount').notNull(),
+  status: text('status').default('pending'),
+});`,
+        explanation: "Uses Drizzle ORM schema mapping to define type-safe database models, ensuring compile-time safety and automatic schema synchronization."
       }
     ],
-    documentation: `## Async Scanner Compile Guide
+    documentation: `## LocalBiz Setup Guide
 
-### Build binary:
+### Install project dependencies:
 \`\`\`bash
-mkdir build && cd build
-cmake ..
-make
+npm install
 \`\`
 
-### Run scanner:
+### Run database migrations:
 \`\`\`bash
-./port_scanner --target 192.168.1.1 --ports 1-1000
+npx drizzle-kit push:sqlite
 \`\`\`
 `
   },
   {
-    id: "fake-news-detector",
-    title: "Fake News Detector",
-    tagline: "NLP-powered machine learning classifier detecting misinformation with 85% accuracy.",
-    description: "An NLP classifier that flags fake news articles. It converts article body text to feature matrices using TF-IDF vectorization and trains a Passive-Aggressive Classifier to evaluate facts versus misinformation.",
+    id: "anivault",
+    title: "AniVault",
+    tagline: "Static, Zero-Backend Anime Discovery and Download Hub utilizing the Jikan API.",
+    description: "A fully static client-side anime database consuming the Jikan API v4 (MyAnimeList wrapper) with custom request throttling to handle rate limits seamlessly. Features responsive grids and real-time pagination search.",
     heroImage: "/images/flux_hero.png",
     demoVideo: "/videos/journey.mp4",
-    githubUrl: "https://github.com/RashmiKumari13/FakeNewsDetector",
-    liveUrl: "https://github.com/RashmiKumari13/FakeNewsDetector",
-    techStack: ["Python", "Scikit-Learn", "NLP", "Pandas", "Jupyter Notebook"],
+    githubUrl: "https://github.com/RashmiKumari13/AniVault",
+    liveUrl: "https://github.com/RashmiKumari13/AniVault",
+    techStack: ["HTML5", "CSS3", "Vanilla JS", "Jikan API v4", "REST APIs", "Tailwind CSS"],
     features: [
-      "Natural Language Processing pre-processing pipeline parsing HTML/special chars.",
-      "TF-IDF (Term Frequency-Inverse Document Frequency) text vectorizer.",
-      "Passive-Aggressive Classifier for real-time online learning adjustments.",
-      "Confusion matrix evaluation tracking model accuracy thresholds."
+      "Zero-backend architecture querying live MyAnimeList database endpoints.",
+      "Custom request throttling handling Jikan's 3 requests/sec rate limits.",
+      "Dynamic hero slider with auto-rotation, dot navigation, and metadata fetches.",
+      "Real-time global search query filters with skeleton shimmer loading states."
     ],
     architecture: {
-      description: "Text is loaded and cleaned. TF-IDF maps word distributions to sparse matrices. The Passive-Aggressive classifier learns decision boundaries, marking predictions as REAL or FAKE.",
+      description: "Vanilla JavaScript fetch loops request data directly from the public Jikan API. A middleware throttling queue delays calls by 400-600ms, populating responsive UI containers.",
       diagramNodes: [
-        { id: "raw_text", label: "News Articles Dataset", type: "client" },
-        { id: "vectorizer", label: "TF-IDF Vectorizer", type: "service" },
-        { id: "model", label: "Passive-Aggressive Model", type: "leader" },
-        { id: "eval", label: "Confusion Matrix Metrics", type: "storage" }
+        { id: "ui", label: "HTML5/CSS3 Responsive UI", type: "client" },
+        { id: "throttle", label: "Request Throttling Queue", type: "service" },
+        { id: "jikan", label: "Jikan API v4 Endpoints", type: "network" }
       ],
       diagramEdges: [
-        { from: "raw_text", to: "vectorizer", label: "Preprocessed Text" },
-        { from: "vectorizer", to: "model", label: "Feature Matrix" },
-        { from: "model", to: "eval", label: "Evaluate Predictions" }
+        { from: "ui", to: "throttle", label: "User Search Query" },
+        { from: "throttle", to: "jikan", label: "Throttled Fetch (400-600ms Delay)" },
+        { from: "jikan", to: "ui", label: "JSON Metadata Payload" }
       ]
     },
     challenges: [
-      "Stopwords and casing introduced text noise, degrading accuracy below 75%.",
-      "Model overfitting on training datasets."
+      "Jikan API rate limits (3 requests/second) returned HTTP 429 errors when loading multiple sections.",
+      "Maintaining state agreement when reloading pages during token expirations."
     ],
     solutions: [
-      "Integrated NLTK text normalization (casing filters and stopword cleanups).",
-      "Tuned tfidf-vectorizer parameters to filter out rare words and enforce regularisation."
+      "Built a custom asynchronous throttle scheduler with staggered delays (400-600ms) between concurrent fetch pipelines.",
+      "Implemented local caching of API responses to minimize redundant HTTP calls."
     ],
     engineeringDecisions: [
-      "Chose the Passive-Aggressive classifier for its online learning efficiency on massive text vectors.",
-      "Utilized Pandas dataframes for high-performance memory dataset mappings."
+      "Kept architecture static to ensure lightning-fast loads and zero hosting overhead.",
+      "Utilized pure CSS Flexbox and Grid layouts to achieve absolute responsiveness without heavy framework packages."
     ],
     roadmap: [
-      "Implement deep learning transformers (BERT).",
-      "Develop browser extensions to audit articles in real-time.",
-      "Create API endpoints for integration in news feeds."
+      "Support user bookmark collections via localStorage.",
+      "Add dark mode style variations.",
+      "Integrate an video trailer preview modal."
     ],
     performance: {
       lighthousePerformance: 99,
       lighthouseAccessibility: 98,
       lighthouseBestPractices: 100,
-      lighthouseSEO: 96,
-      loadTimeMs: 140,
-      fcpMs: 70,
-      bundleSizeKb: 36
+      lighthouseSEO: 97,
+      loadTimeMs: 120,
+      fcpMs: 60,
+      bundleSizeKb: 25
     },
     codeHighlights: [
       {
-        filename: "detector.py",
-        language: "python",
-        code: `from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.linear_model import PassiveAggressiveClassifier
-from sklearn.metrics import accuracy_score, confusion_matrix
+        filename: "api.js",
+        language: "javascript",
+        code: `// Asynchronous throttle helper to respect 3 req/s limits
+const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
-# Vectorize dataset text features
-tfidf_vectorizer = TfidfVectorizer(stop_words='english', max_df=0.7)
-x_train_tfidf = tfidf_vectorizer.fit_transform(x_train)
-x_test_tfidf = tfidf_vectorizer.transform(x_test)
+async function throttledFetch(url) {
+    await delay(500); // 500ms staggered delay
+    const response = await fetch(url);
+    if (response.status === 429) {
+        console.warn("Rate limited, retrying in 1s...");
+        await delay(1000);
+        return throttledFetch(url);
+    }
+    return response.json();
+}
 
-# Initialize online Passive-Aggressive Classifier
-pac = PassiveAggressiveClassifier(max_iter=50)
-pac.fit(x_train_tfidf, y_train)
-
-# Predict and evaluate
-y_pred = pac.predict(x_test_tfidf)
-score = accuracy_score(y_test, y_pred)
-print(f'Accuracy: {round(score*100, 2)}%')`,
-        explanation: "Utilizes Scikit-learn to convert raw texts to term frequencies and fits an online Passive-Aggressive classifier to rapidly adjust weights for text classification."
+async function loadAnimeData() {
+    const list = await throttledFetch('https://api.jikan.moe/v4/top/anime');
+    // Render list...
+}`,
+        explanation: "Implements a custom retry-on-limit and staggered delay fetch wrapper to prevent HTTP 429 Rate Limiting errors from the public Jikan API."
       }
     ],
-    documentation: `## ML Model Train Guide
+    documentation: `## AniVault Setup Guide
 
-### Install packages:
+### Clone repository:
 \`\`\`bash
-pip install scikit-learn pandas nltk
-\`\`\`
+git clone https://github.com/RashmiKumari13/AniVault.git
+\`\`
 
-### Run Notebook evaluation:
-\`\`\`bash
-jupyter notebook notebooks/detector.ipynb
-\`\`\`
+### Launch app:
+Open \`index.html\` directly in any web browser!
 `
   },
   {

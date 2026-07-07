@@ -18,7 +18,9 @@ import {
   CheckCircle,
   Clock,
   Code2,
-  Award
+  Award,
+  Volume2,
+  VolumeX
 } from "lucide-react";
 
 // Synchronized Background Videos
@@ -94,6 +96,49 @@ export default function Home() {
   const [recruiterMode, setRecruiterMode] = useState(false);
   const [activeProject, setActiveProject] = useState<Project>(projectsData[0]);
   const [projectTab, setProjectTab] = useState<"architecture" | "code" | "performance" | "docs">("architecture");
+  const [isMuted, setIsMuted] = useState(true);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  useEffect(() => {
+    // Dynamically instantiate Audio on client-side to prevent SSR glitches
+    const audio = new Audio("/portfolio/audio/ambient.mp3");
+    audio.loop = true;
+    audio.volume = 0.20; // Set low backdrop volume
+    audioRef.current = audio;
+
+    const initAudio = () => {
+      audio.play()
+        .then(() => setIsMuted(false))
+        .catch(() => {
+          // Autoplay blocked initially
+        });
+      window.removeEventListener("pointerdown", initAudio);
+      window.removeEventListener("scroll", initAudio);
+    };
+
+    window.addEventListener("pointerdown", initAudio);
+    window.addEventListener("scroll", initAudio);
+
+    return () => {
+      audio.pause();
+      window.removeEventListener("pointerdown", initAudio);
+      window.removeEventListener("scroll", initAudio);
+    };
+  }, []);
+
+  const toggleAudio = () => {
+    const audio = audioRef.current;
+    if (!audio) return;
+
+    if (audio.paused) {
+      audio.play()
+        .then(() => setIsMuted(false))
+        .catch(() => {});
+    } else {
+      audio.pause();
+      setIsMuted(true);
+    }
+  };
 
   // Smooth scroll helper to section ID
   const scrollToSection = (id: string) => {
@@ -108,8 +153,10 @@ export default function Home() {
       {/* Background Cinematic Video Layer */}
       <ScrollVideoSync />
 
-      {/* Global Header Navigation */}
-      <header className="fixed top-0 left-0 right-0 z-40 bg-gradient-to-b from-black/80 to-transparent backdrop-blur-sm border-b border-white/5 py-4 px-6 md:px-12 flex items-center justify-between">
+      {/* Content Stacking Layer */}
+      <div className="relative z-10">
+        {/* Global Header Navigation */}
+        <header className="fixed top-0 left-0 right-0 z-40 bg-gradient-to-b from-black/80 to-transparent backdrop-blur-sm border-b border-white/5 py-4 px-6 md:px-12 flex items-center justify-between">
         <div className="flex items-center gap-2 cursor-pointer" onClick={() => scrollToSection("section-hero")}>
           <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-primary to-cyan-500 flex items-center justify-center font-bold text-black text-sm">
             RK
@@ -127,6 +174,28 @@ export default function Home() {
           <button onClick={() => scrollToSection("section-certifications")} className="hover:text-white transition-colors">
             Credentials
           </button>
+          
+          {/* Audio controller toggle */}
+          <button 
+            onClick={toggleAudio} 
+            className="flex items-center gap-1.5 hover:text-white transition-colors py-1.5 px-3 rounded-full border border-white/10 bg-white/5 cursor-pointer"
+            aria-label="Toggle background audio"
+          >
+            {isMuted ? (
+              <VolumeX className="w-3.5 h-3.5 text-zinc-400" />
+            ) : (
+              <div className="flex items-center gap-0.5">
+                <Volume2 className="w-3.5 h-3.5 text-cyan-400 animate-pulse" />
+                <span className="flex gap-0.5 h-2 items-end">
+                  <span className="w-0.5 h-1.5 bg-cyan-400 animate-bounce duration-300" style={{ animationDelay: '0.1s' }} />
+                  <span className="w-0.5 h-2 bg-cyan-400 animate-bounce duration-500" style={{ animationDelay: '0.3s' }} />
+                  <span className="w-0.5 h-1 bg-cyan-400 animate-bounce duration-400" style={{ animationDelay: '0.2s' }} />
+                </span>
+              </div>
+            )}
+            <span className="text-[9px] font-bold tracking-wider">{isMuted ? "SOUND OFF" : "SOUND ON"}</span>
+          </button>
+
           <button
             onClick={() => {
               setRecruiterMode(!recruiterMode);
@@ -607,10 +676,10 @@ export default function Home() {
             <div className="glass-panel p-6 rounded-xl border border-white/5 flex gap-4 items-start">
               <Award className="w-8 h-8 text-primary shrink-0" />
               <div>
-                <h4 className="text-sm font-bold text-white">Cybersecurity Virtual Simulation</h4>
-                <p className="text-[10px] text-zinc-500 uppercase font-semibold mt-0.5">Tata (Forage)</p>
+                <h4 className="text-sm font-bold text-white">Web Development</h4>
+                <p className="text-[10px] text-zinc-500 uppercase font-semibold mt-0.5">IIT Roorkee (Ihub Divya Sampark)</p>
                 <p className="text-xs text-zinc-400 mt-2 leading-relaxed">
-                  Completed defensive simulation projects focusing on asset protection, scanning networks, and configuring IAM rules.
+                  Completed comprehensive web development training program covering modern full-stack workflows and responsive layout paradigms.
                 </p>
               </div>
             </div>
@@ -618,10 +687,10 @@ export default function Home() {
             <div className="glass-panel p-6 rounded-xl border border-white/5 flex gap-4 items-start">
               <Award className="w-8 h-8 text-cyan-400 shrink-0" />
               <div>
-                <h4 className="text-sm font-bold text-white">Salesforce Developer Internship</h4>
-                <p className="text-[10px] text-zinc-500 uppercase font-semibold mt-0.5">Salesforce</p>
+                <h4 className="text-sm font-bold text-white">Data Science</h4>
+                <p className="text-[10px] text-zinc-500 uppercase font-semibold mt-0.5">NPTEL Swayam</p>
                 <p className="text-xs text-zinc-400 mt-2 leading-relaxed">
-                  Earned Developer Virtual Internship credentials validating security customisations, process automations, and APEX script structures.
+                  Completed professional certification course covering exploratory data analysis (EDA), data models, algorithms, and key data science foundations.
                 </p>
               </div>
             </div>
@@ -629,10 +698,10 @@ export default function Home() {
             <div className="glass-panel p-6 rounded-xl border border-white/5 flex gap-4 items-start">
               <Award className="w-8 h-8 text-emerald-400 shrink-0" />
               <div>
-                <h4 className="text-sm font-bold text-white">AI &amp; ML Bootcamp</h4>
-                <p className="text-[10px] text-zinc-500 uppercase font-semibold mt-0.5">Kodacy / InternCertify</p>
+                <h4 className="text-sm font-bold text-white">Internet of Things (IOT)</h4>
+                <p className="text-[10px] text-zinc-500 uppercase font-semibold mt-0.5">NPTEL Swayam</p>
                 <p className="text-xs text-zinc-400 mt-2 leading-relaxed">
-                  Completed intensive bootcamps focused on Python data science, data preprocessing, classifier evaluations, and feature engineering.
+                  Earned academic credentials validating knowledge of interconnected device logic, smart networks, and telemetry pipelines.
                 </p>
               </div>
             </div>
@@ -659,7 +728,7 @@ export default function Home() {
           <div className="flex flex-wrap gap-4 pt-4">
             {/* Direct Mail */}
             <a
-              href="mailto:rashmikumar42005@gmail.com"
+              href="mailto:rashmikumari042005@gmail.com"
               className="flex items-center gap-2 px-6 py-3 rounded-full bg-white text-black font-extrabold text-xs uppercase hover:bg-zinc-200 transition-all"
             >
               <Mail className="w-4 h-4" />
@@ -668,7 +737,7 @@ export default function Home() {
 
             {/* Resume download link */}
             <a
-              href="/Rashmi_Kumari_blue.pdf"
+              href="/portfolio/Rashmi_Kumari.pdf"
               download
               target="_blank"
               className="flex items-center gap-2 px-6 py-3 rounded-full bg-black/40 hover:bg-black/60 border border-white/15 hover:border-white/35 font-extrabold text-xs uppercase text-white transition-all"
@@ -709,6 +778,7 @@ export default function Home() {
           </div>
         </footer>
       </section>
+      </div>
 
       {/* Floating Recruiter Assistant Dialog */}
       <ChatPanel />
